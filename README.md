@@ -54,32 +54,21 @@ After the prediction task has finished, a `<dataset_name>-<model_name>-latest_re
 ## Available Targets
 `Snakefile` currently contains the following targets to generate predictions, each of which corresponds to a different dataset, and if available, a certain model:
 
-- `segal_promoters_enformer`
-- `segal_promoters_basenji1`
-- `segal_promoters_basenji2`
-- `cohen_tripseq_enformer`
-- `cohen_tripseq_basenji1`
-- `cohen_tripseq_basenji2`
+- `segal_promoters_<model>` for `<model>`: `enformer`, `basenji1` and `basenji2`
+- `cohen_tripseq_<model>` for `<model>`: `enformer`, `basenji1` and `basenji2`
 - `cohen_patchmpra`
 - `findlay_brca`
-- `bergmann_exp_enformer` 
-- `bergmann_exp_basenji2`
+- `bergmann_exp_<model>` for `<model>`: `enformer` and `basenji2`
 - `bergmann_promoteronly`
 - `bergmann_enhancercentered`
-- `kircher_ingenome_enformer`
-- `kircher_ingenome_basenji1`
-- `kircher_ingenome_basenji2`
-- `tss_sim_enformer`
-- `tss_sim_basenji1`
-- `tss_sim_basenji2`
+- `kircher_ingenome_<model>` for `<model>`: `enformer`, `basenji1` and `basenji2`
+- `tss_sim_<model>` for `<model>`: `enformer`, `basenji1` and `basenji2`
 - `fulco_crispri`
 - `avsec_fulltable`
 - `avsec_fulltable_fixed`
-- `avsec_enhancercentered_enformer`
-- `avsec_enhancercentered_basenji2`
+- `avsec_enhancercentered_<model>` for `<model>`: `enformer` and `basenji2`
 - `segal_ism`
-- `gtex_eqtl_at_tss_enformer`
-- `gtex_eqtl_at_tss_basenji2`
+- `gtex_eqtl_at_tss_<model>` for `<model>`: `enformer` and `basenji2`
 - `ful_gas_localeffects`
 - `fulco_in_fulco`
 
