@@ -1,0 +1,1122 @@
+configfile: "config/config.yaml"
+
+# Preparations
+
+# needed for calling modules from the "fake package"
+parent_folder = os.path.split(os.getcwd())[0]
+
+# Rules which are shortcuts to the final predictions for each experiment
+
+rule segal_promoters_enformer:
+    input: "result/segal_promoters/enformer/all_predictions.tsv",
+
+rule segal_promoters_basenji1:
+    input: "result/segal_promoters/basenji1/all_predictions.tsv",
+
+rule segal_promoters_basenji2:
+    input: "result/segal_promoters/basenji2/all_predictions.tsv",
+
+rule cohen_tripseq_enformer:
+    input: "result/cohen_tripseq/enformer/all_predictions.tsv",
+
+rule cohen_tripseq_basenji1:
+    input: "result/cohen_tripseq/basenji1/all_predictions.tsv",
+
+rule cohen_tripseq_basenji2:
+    input: "result/cohen_tripseq/basenji2/all_predictions.tsv",
+
+rule cohen_patchmpra:
+    input: "result/cohen_patchmpra/enformer/all_predictions.tsv"
+
+rule findlay_brca:
+    input: "result/findlay_brca/enformer/all_predictions.tsv"
+
+rule weiss_constructs:
+    input: "result/weiss_constructs/enformer/all_predictions.tsv"
+
+rule weiss_ingenome:
+    input: "result/weiss_ingenome/enformer/all_predictions.tsv"
+
+rule bergmann_exp_enformer:
+    input: "result/bergmann_exp/enformer/all_predictions.tsv"
+
+rule bergmann_exp_basenji2:
+    input: "result/bergmann_exp/basenji2/all_predictions.tsv"
+
+rule bergmann_promoteronly:
+    input: "result/bergmann_promoteronly/enformer/all_predictions.tsv"
+
+rule bergmann_enhancercentered:
+    input: "result/bergmann_enhancercentered/enformer/all_predictions.tsv"
+
+rule kircher_ingenome_enformer:
+    input: "result/kircher_ingenome/enformer/all_predictions.tsv"
+
+rule kircher_ingenome_basenji1:
+    input: "result/kircher_ingenome/basenji1/all_predictions.tsv"
+
+rule kircher_ingenome_basenji2:
+    input: "result/kircher_ingenome/basenji2/all_predictions.tsv"
+
+rule arensbergen_ingenome_enformer:
+    input: "result/arensbergen_ingenome/enformer/all_predictions.tsv"
+
+rule arensbergen_ingenome_basenji1:
+    input: "result/arensbergen_ingenome/basenji1/all_predictions.tsv"
+
+rule arensbergen_ingenome_basenji2:
+    input: "result/arensbergen_ingenome/basenji2/all_predictions.tsv"
+
+rule arensbergen_plasmid:
+    input: "result/arensbergen_plasmid/enformer/all_predictions.tsv"
+
+rule tss_sim_enformer:
+    input: "result/tss_sim/enformer/all_predictions.tsv"
+
+rule tss_sim_basenji1:
+    input: "result/tss_sim/basenji1/all_predictions.tsv"
+
+rule tss_sim_basenji2:
+    input: "result/tss_sim/basenji2/all_predictions.tsv"
+
+rule tss_sim_shuffled:
+    input: "result/tss_sim_shuffled/enformer/all_predictions.tsv"
+
+rule asb:
+    input: expand("predictions/asb/{n}.tsv", n=range(config["sample_gen_params"]["asb"]["enformer"]["number_of_jobs"]))
+
+rule fulco_crispri:
+    input: "result/fulco_crispri/enformer/all_predictions.tsv"
+
+rule avsec_fulltable:
+    input: "result/avsec_fulltable/enformer/all_predictions.tsv"
+
+rule avsec_fulltable_fixed:
+    input: "result/avsec_fulltable_fixed/enformer/all_predictions.tsv"
+
+rule sahu_enhancercentred:
+    input: "result/sahu_enhancercentred/enformer/all_predictions.tsv"
+
+rule avsec_enhancercentered_enformer:
+    input: "result/avsec_enhancercentered/enformer/all_predictions.tsv"
+
+rule avsec_enhancercentered_basenji2:
+    input: "result/avsec_enhancercentered/basenji2/all_predictions.tsv"
+
+rule segal_ism:
+    input: "result/segal_ism/enformer/all_predictions.tsv"
+
+rule gtex_eqtl_at_tss_enformer:
+    input: "result/gtex_eqtl_at_tss/enformer/all_predictions.tsv"
+
+rule gtex_eqtl_at_tss_basenji2:
+    input: "result/gtex_eqtl_at_tss/basenji2/all_predictions.tsv"
+
+rule ful_gas_localeffects:
+    input: "result/ful_gas_localeffects/enformer/all_predictions.tsv"
+
+rule bergmann_in_fulco:
+    input: "result/bergmann_in_fulco/enformer/all_predictions.tsv"
+
+rule fulco_in_fulco:
+    input: "result/fulco_in_fulco/enformer/all_predictions.tsv"
+
+rule windowed_cre:
+    input: "result/windowed_cre/enformer/all_predictions.tsv"
+
+# Rules for the actual pipeline
+"""The following rules split a dataset into multiple job files.
+
+Input:
+fasta_path -- path to the fasta from which sequences are extracted
+data_path -- other data necessary to run the script
+Output:
+job_pickles -- all job pickles into which the data is split
+Params:
+number_of_jobs -- number of jobs into which the dataset will be split
+data_dir -- output directory for all job pickles
+"""
+
+rule samplegen_segal_promoters_enformer:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["segal_promoters"]["genome"],
+        data_path = config["sample_gen_params"]["segal_promoters"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/segal_promoters/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["segal_promoters"]["enformer"]["number_of_jobs"]))
+        )
+    params:
+        number_of_jobs = config["sample_gen_params"]["segal_promoters"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/segal_promoters/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_segal_promoters "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model enformer"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_segal_promoters_basenji1:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["segal_promoters"]["genome"],
+        data_path = config["sample_gen_params"]["segal_promoters"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/segal_promoters/basenji1/{n}.pkl",
+                   n=range(config["sample_gen_params"]["segal_promoters"]["basenji1"]["number_of_jobs"]))
+        )
+    params:
+        number_of_jobs = config["sample_gen_params"]["segal_promoters"]["basenji1"]["number_of_jobs"],
+        data_dir = directory("pickles/segal_promoters/basenji1"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_segal_promoters "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model basenji1"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_segal_promoters_basenji2:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["segal_promoters"]["genome"],
+        data_path = config["sample_gen_params"]["segal_promoters"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/segal_promoters/basenji2/{n}.pkl",
+                   n=range(config["sample_gen_params"]["segal_promoters"]["basenji2"]["number_of_jobs"]))
+        )
+    params:
+        number_of_jobs = config["sample_gen_params"]["segal_promoters"]["basenji2"]["number_of_jobs"],
+        data_dir = directory("pickles/segal_promoters/basenji2"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_segal_promoters "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model basenji2"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_cohen_patchmpra:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["cohen_patchmpra"]["genome"],
+        data_path = config["sample_gen_params"]["cohen_patchmpra"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/cohen_patchmpra/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["cohen_patchmpra"]["enformer"]["number_of_jobs"]))
+        )
+    params:
+        number_of_jobs = config["sample_gen_params"]["cohen_patchmpra"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/cohen_patchmpra/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_cohen_patchmpra"
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_cohen_tripseq_enformer:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["cohen_tripseq"]["genome"],
+        data_path = config["sample_gen_params"]["cohen_tripseq"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/cohen_tripseq/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["cohen_tripseq"]["enformer"]["number_of_jobs"]))
+        )
+    params:
+        number_of_jobs = config["sample_gen_params"]["cohen_tripseq"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/cohen_tripseq/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_cohen_tripseq"
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model enformer"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_cohen_tripseq_basenji1:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["cohen_tripseq"]["genome"],
+        data_path = config["sample_gen_params"]["cohen_tripseq"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/cohen_tripseq/basenji1/{n}.pkl",
+                   n=range(config["sample_gen_params"]["cohen_tripseq"]["basenji1"]["number_of_jobs"]))
+        )
+    params:
+        number_of_jobs = config["sample_gen_params"]["cohen_tripseq"]["basenji1"]["number_of_jobs"],
+        data_dir = directory("pickles/cohen_tripseq/basenji1"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_cohen_tripseq"
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model basenji1"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_cohen_tripseq_basenji2:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["cohen_tripseq"]["genome"],
+        data_path = config["sample_gen_params"]["cohen_tripseq"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/cohen_tripseq/basenji2/{n}.pkl",
+                   n=range(config["sample_gen_params"]["cohen_tripseq"]["basenji2"]["number_of_jobs"]))
+        )
+    params:
+        number_of_jobs = config["sample_gen_params"]["cohen_tripseq"]["basenji2"]["number_of_jobs"],
+        data_dir = directory("pickles/cohen_tripseq/basenji2"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_cohen_tripseq"
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model basenji2"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_findlay_brca:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["findlay_brca"]["genome"],
+        data_path = config["sample_gen_params"]["findlay_brca"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/findlay_brca/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["findlay_brca"]["enformer"]["number_of_jobs"]))
+        )
+    params:
+        number_of_jobs = config["sample_gen_params"]["findlay_brca"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/findlay_brca/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_findlay_brca"
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_weiss_ingenome:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["weiss_ingenome"]["genome"],
+        data_path = config["sample_gen_params"]["weiss_ingenome"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/weiss_ingenome/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["weiss_ingenome"]["enformer"]["number_of_jobs"]))
+        )
+    params:
+        number_of_jobs = config["sample_gen_params"]["weiss_ingenome"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/weiss_ingenome/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_weiss_ingenome"
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_weiss_constructs:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["weiss_constructs"]["genome"],
+        data_path = config["sample_gen_params"]["weiss_constructs"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/weiss_constructs/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["weiss_constructs"]["enformer"]["number_of_jobs"]))
+        )
+    params:
+        number_of_jobs = config["sample_gen_params"]["weiss_constructs"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/weiss_constructs/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_weiss_constructs"
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_bergmann_exp_enformer:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["bergmann_exp"]["genome"],
+        data_path = config["sample_gen_params"]["bergmann_exp"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/bergmann_exp/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["bergmann_exp"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["bergmann_exp"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/bergmann_exp/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_bergmann_exp "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model enformer"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_bergmann_exp_basenji2:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["bergmann_exp"]["genome"],
+        data_path = config["sample_gen_params"]["bergmann_exp"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/bergmann_exp/basenji2/{n}.pkl",
+                   n=range(config["sample_gen_params"]["bergmann_exp"]["basenji2"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["bergmann_exp"]["basenji2"]["number_of_jobs"],
+        data_dir = directory("pickles/bergmann_exp/basenji2"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_bergmann_exp "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model basenji2"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_bergmann_promoteronly:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["bergmann_promoteronly"]["genome"],
+        data_path = config["sample_gen_params"]["bergmann_promoteronly"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/bergmann_promoteronly/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["bergmann_promoteronly"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["bergmann_promoteronly"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/bergmann_promoteronly/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_bergmann_promoteronly "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_bergmann_enhancercentered:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["bergmann_enhancercentered"]["genome"],
+        data_path = config["sample_gen_params"]["bergmann_enhancercentered"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/bergmann_enhancercentered/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["bergmann_enhancercentered"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["bergmann_enhancercentered"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/bergmann_enhancercentered/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_bergmann_enhancercentered "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_kircher_ingenome_enformer:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["kircher_ingenome"]["genome"],
+        data_path = config["sample_gen_params"]["kircher_ingenome"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/kircher_ingenome/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["kircher_ingenome"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["kircher_ingenome"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/kircher_ingenome/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_kircher_ingenome "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model enformer"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_kircher_ingenome_basenji1:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["kircher_ingenome"]["genome"],
+        data_path = config["sample_gen_params"]["kircher_ingenome"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/kircher_ingenome/basenji1/{n}.pkl",
+                   n=range(config["sample_gen_params"]["kircher_ingenome"]["basenji1"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["kircher_ingenome"]["basenji1"]["number_of_jobs"],
+        data_dir = directory("pickles/kircher_ingenome/basenji1"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_kircher_ingenome "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model basenji1"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_kircher_ingenome_basenji2:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["kircher_ingenome"]["genome"],
+        data_path = config["sample_gen_params"]["kircher_ingenome"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/kircher_ingenome/basenji2/{n}.pkl",
+                   n=range(config["sample_gen_params"]["kircher_ingenome"]["basenji2"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["kircher_ingenome"]["basenji2"]["number_of_jobs"],
+        data_dir = directory("pickles/kircher_ingenome/basenji2"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_kircher_ingenome "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model basenji2"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_arensbergen_ingenome_enformer:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["arensbergen_ingenome"]["genome"],
+        data_path = config["sample_gen_params"]["arensbergen_ingenome"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/arensbergen_ingenome/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["arensbergen_ingenome"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["arensbergen_ingenome"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/arensbergen_ingenome/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_arensbergen_ingenome "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model enformer"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_arensbergen_ingenome_basenji1:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["arensbergen_ingenome"]["genome"],
+        data_path = config["sample_gen_params"]["arensbergen_ingenome"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/arensbergen_ingenome/basenji1/{n}.pkl",
+                   n=range(config["sample_gen_params"]["arensbergen_ingenome"]["basenji1"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["arensbergen_ingenome"]["basenji1"]["number_of_jobs"],
+        data_dir = directory("pickles/arensbergen_ingenome/basenji1"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_arensbergen_ingenome "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model basenji1"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_arensbergen_ingenome_basenji2:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["arensbergen_ingenome"]["genome"],
+        data_path = config["sample_gen_params"]["arensbergen_ingenome"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/arensbergen_ingenome/basenji2/{n}.pkl",
+                   n=range(config["sample_gen_params"]["arensbergen_ingenome"]["basenji2"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["arensbergen_ingenome"]["basenji2"]["number_of_jobs"],
+        data_dir = directory("pickles/arensbergen_ingenome/basenji2"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_arensbergen_ingenome "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model basenji2"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_arensbergen_plasmid:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["arensbergen_plasmid"]["genome"],
+        data_path = config["sample_gen_params"]["arensbergen_plasmid"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/arensbergen_plasmid/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["arensbergen_plasmid"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["arensbergen_plasmid"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/arensbergen_plasmid/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_arensbergen_plasmid "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_tss_sim_enformer:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["tss_sim"]["genome"],
+        data_path = config["sample_gen_params"]["tss_sim"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/tss_sim/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["tss_sim"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["tss_sim"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/tss_sim/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_tss_sim "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model enformer"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_tss_sim_basenji2:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["tss_sim"]["genome"],
+        data_path = config["sample_gen_params"]["tss_sim"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/tss_sim/basenji2/{n}.pkl",
+                   n=range(config["sample_gen_params"]["tss_sim"]["basenji2"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["tss_sim"]["basenji2"]["number_of_jobs"],
+        data_dir = directory("pickles/tss_sim/basenji2"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_tss_sim "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model basenji2"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_tss_sim_basenji1:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["tss_sim"]["genome"],
+        data_path = config["sample_gen_params"]["tss_sim"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/tss_sim/basenji1/{n}.pkl",
+                   n=range(config["sample_gen_params"]["tss_sim"]["basenji1"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["tss_sim"]["basenji1"]["number_of_jobs"],
+        data_dir = directory("pickles/tss_sim/basenji1"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_tss_sim "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model basenji1"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_tss_sim_shuffled:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["tss_sim_shuffled"]["genome"],
+        data_path = config["sample_gen_params"]["tss_sim_shuffled"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/tss_sim_shuffled/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["tss_sim_shuffled"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["tss_sim_shuffled"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/tss_sim_shuffled/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_tss_sim_shuffled "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_asb:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["asb"]["genome"],
+        data_path = config["sample_gen_params"]["asb"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/asb/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["asb"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["asb"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/asb/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_asb "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_fulco_crispri:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["fulco_crispri"]["genome"],
+        data_path = config["sample_gen_params"]["fulco_crispri"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/fulco_crispri/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["fulco_crispri"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["fulco_crispri"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/fulco_crispri/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_fulco_crispri "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_avsec_fulltable:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["avsec_fulltable"]["genome"],
+        data_path = config["sample_gen_params"]["avsec_fulltable"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/avsec_fulltable/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["avsec_fulltable"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["avsec_fulltable"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/avsec_fulltable/enformer"),
+        enh_wide_type = config["sample_gen_params"]["avsec_fulltable"]["enh_wide_type"],
+        shuffles = config["sample_gen_params"]["avsec_fulltable"]["shuffles"],
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_avsec_fulltable "
+        " --enh-wide-type {params.enh_wide_type}"
+        " --shuffles {params.shuffles}"
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_avsec_fulltable_fixed:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["avsec_fulltable_fixed"]["genome"],
+        data_path = config["sample_gen_params"]["avsec_fulltable_fixed"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/avsec_fulltable_fixed/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["avsec_fulltable_fixed"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["avsec_fulltable_fixed"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/avsec_fulltable_fixed/enformer"),
+        enh_wide_type = config["sample_gen_params"]["avsec_fulltable_fixed"]["enh_wide_type"],
+        shuffles = config["sample_gen_params"]["avsec_fulltable"]["shuffles"],
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_avsec_fulltable "
+        " --enh-wide-type {params.enh_wide_type}"
+        " --shuffles {params.shuffles}"
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_sahu_enhancercentred:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["sahu_enhancercentred"]["genome"],
+        data_path = config["sample_gen_params"]["sahu_enhancercentred"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/sahu_enhancercentred/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["sahu_enhancercentred"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["sahu_enhancercentred"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/sahu_enhancercentred/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_sahu_enhancercentred "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_avsec_enhancercentered_enformer:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["avsec_enhancercentered"]["genome"],
+        data_path = config["sample_gen_params"]["avsec_enhancercentered"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/avsec_enhancercentered/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["avsec_enhancercentered"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["avsec_enhancercentered"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/avsec_enhancercentered/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_avsec_enhancercentered "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model enformer"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_avsec_enhancercentered_basenji2:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["avsec_enhancercentered"]["genome"],
+        data_path = config["sample_gen_params"]["avsec_enhancercentered"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/avsec_enhancercentered/basenji2/{n}.pkl",
+                   n=range(config["sample_gen_params"]["avsec_enhancercentered"]["basenji2"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["avsec_enhancercentered"]["basenji2"]["number_of_jobs"],
+        data_dir = directory("pickles/avsec_enhancercentered/basenji2"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_avsec_enhancercentered "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model basenji2"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_segal_ism:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["segal_ism"]["genome"],
+        data_path = config["sample_gen_params"]["segal_ism"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/segal_ism/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["segal_ism"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["segal_ism"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/segal_ism/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_segal_ism "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_gtex_eqtl_at_tss_enformer:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["gtex_eqtl_at_tss"]["genome"],
+        data_path = config["sample_gen_params"]["gtex_eqtl_at_tss"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/gtex_eqtl_at_tss/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["gtex_eqtl_at_tss"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["gtex_eqtl_at_tss"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/gtex_eqtl_at_tss/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_gtex_eqtl_at_tss "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model enformer"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_gtex_eqtl_at_tss_basenji2:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["gtex_eqtl_at_tss"]["genome"],
+        data_path = config["sample_gen_params"]["gtex_eqtl_at_tss"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/gtex_eqtl_at_tss/basenji2/{n}.pkl",
+                   n=range(config["sample_gen_params"]["gtex_eqtl_at_tss"]["basenji2"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["gtex_eqtl_at_tss"]["basenji2"]["number_of_jobs"],
+        data_dir = directory("pickles/gtex_eqtl_at_tss/basenji2"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_gtex_eqtl_at_tss "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --model basenji2"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_ful_gas_localeffects:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["ful_gas_localeffects"]["genome"],
+        data_path = config["sample_gen_params"]["ful_gas_localeffects"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/ful_gas_localeffects/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["ful_gas_localeffects"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["ful_gas_localeffects"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/ful_gas_localeffects/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_ful_gas_localeffects "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_bergmann_in_fulco:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["bergmann_in_fulco"]["genome"],
+        data_path = config["sample_gen_params"]["bergmann_in_fulco"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/bergmann_in_fulco/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["bergmann_in_fulco"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["bergmann_in_fulco"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/bergmann_in_fulco/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_bergmann_in_fulco "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_fulco_in_fulco:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["fulco_in_fulco"]["genome"],
+        data_path = config["sample_gen_params"]["fulco_in_fulco"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/fulco_in_fulco/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["fulco_in_fulco"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["fulco_in_fulco"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/fulco_in_fulco/enformer"),
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_fulco_in_fulco "
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule samplegen_windowed_cre:
+    threads: 8
+    resources: ntasks=1, mem_mb=16000,
+    input:
+        fasta_path = config["sample_gen_params"]["windowed_cre"]["genome"],
+        data_path = config["sample_gen_params"]["windowed_cre"]["data"],
+    output:
+        job_pickles = temp(
+            expand("pickles/windowed_cre/enformer/{n}.pkl",
+                   n=range(config["sample_gen_params"]["windowed_cre"]["enformer"]["number_of_jobs"]))
+            )
+    params:
+        number_of_jobs = config["sample_gen_params"]["windowed_cre"]["enformer"]["number_of_jobs"],
+        data_dir = directory("pickles/windowed_cre/enformer"),
+        shuffles = config["sample_gen_params"]["windowed_cre"]["shuffles"],
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.prepare_windowed_cre "
+        " --shuffles {params.shuffles}"
+        " --fasta-path {input.fasta_path}"
+        " --data-path {input.data_path}"
+        " --number-of-jobs {params.number_of_jobs}"
+        " --output-dir {params.data_dir}"
+
+rule enformer_predict:
+    """Generate predictions for a job using Enformer and append results to TSV.
+
+    Input:
+    data_path -- Path to the job pickle
+    track_dict_path -- Path to the track dict (determined via wildcard & config)
+    Output:
+    prediction -- Path to the prediction TSV
+    """
+    threads: 2
+    resources: ntasks=1, mem_mb=30000, gpu=1,
+    input:
+        data_path = "pickles/{dataset}/enformer/{sample_num}.pkl",
+        track_dict_path = lambda wc: config["sample_gen_params"][wc.dataset]["enformer"]["track_dict"]
+    output:
+        tsv = "predictions/{dataset}/enformer/{sample_num}.tsv",
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.enformer_predict "
+        " --data-path {input.data_path}"
+        " --track-dict-path {input.track_dict_path}"
+        " --output-file {output.tsv}"
+
+rule basenji1_predict:
+    """Generate predictions for a job using Basenji1 and append results to TSV.
+
+    Input:
+    data_path -- Path to the job pickle
+    track_dict_path -- Path to the track dict (determined via wildcard & config)
+    Output:
+    prediction -- Path to the prediction TSV
+    """
+    threads: 2
+    resources: ntasks=1, mem_mb=30000, gpu=1,
+    input:
+        data_path = "pickles/{dataset}/basenji1/{sample_num}.pkl",
+        track_dict_path = lambda wc: config["sample_gen_params"][wc.dataset]["basenji1"]["track_dict"]
+    output:
+        tsv = "predictions/{dataset}/basenji1/{sample_num}.tsv",
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.basenji1_predict "
+        " --data-path {input.data_path}"
+        " --track-dict-path {input.track_dict_path}"
+        " --output-file {output.tsv}"
+
+rule basenji2_predict:
+    """Generate predictions for a job using Basenji2 and append results to TSV.
+
+    Input:
+    data_path -- Path to the job pickle
+    track_dict_path -- Path to the track dict (determined via wildcard & config)
+    Output:
+    prediction -- Path to the prediction TSV
+    """
+    threads: 2
+    resources: ntasks=1, mem_mb=30000, gpu=1,
+    input:
+        data_path = "pickles/{dataset}/basenji2/{sample_num}.pkl",
+        track_dict_path = lambda wc: config["sample_gen_params"][wc.dataset]["basenji2"]["track_dict"]
+    output:
+        tsv = "predictions/{dataset}/basenji2/{sample_num}.tsv",
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.basenji2_predict "
+        " --data-path {input.data_path}"
+        " --track-dict-path {input.track_dict_path}"
+        " --output-file {output.tsv}"
+
+rule assemble_output:
+    """Assemble prediction tsvs for all jobs of a dataset into a single tsv.
+    Copies timestamped version of the final output into configured directory
+
+    Input:
+    All prediction tsvs generated from a sample source
+    Output:
+    tsv file containing all predictions
+    """
+    threads: 4
+    resources: ntasks=1, mem_mb=30_000,
+    input:
+        lambda wc: expand("predictions/{{dataset}}/{{model}}/{n}.tsv",
+                     n=range(config["sample_gen_params"][wc.dataset][wc.model]["number_of_jobs"]))
+    output:
+        "result/{dataset}/{model}/all_predictions.tsv"
+    params:
+        result_path = lambda wc: config["sample_gen_params"][wc.dataset]["result_path"]
+    shell:
+        " PYTHONPATH=" + parent_folder +
+        " python3 -m Code.Scripts.assemble_output"
+        " --input-files {input}"
+        " --output-file {output}"
+        " &&"
+        " ./scripts/copy_to_result_path.sh {output} {wildcards.dataset} {wildcards.model} {params.result_path}"

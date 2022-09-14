@@ -1,0 +1,235 @@
+# --- Miscellaneous
+fasta_paths:
+  hg38: &hg38 "../Data/Genome/genome.fa"
+  hg19: &hg19 "../Data/Genome/genome_hg19.fa"
+# --- Sample generators
+# if this hasn't been updated in a while you should take a look at the generate_samples rule.
+track_files:
+    k562: &k562_track "../Data/Tracks/k562_tracks.yaml"
+sample_gen_params:
+  segal_promoters:
+    data: "../Data/Segal_promoter"
+    genome: *hg38
+    result_path: "../Results/Segal_promoter"
+    enformer:
+      track_dict: &segal_track "../Data/Segal_promoter/tracks.yaml"
+      number_of_jobs: 100
+    basenji1:
+      track_dict: &basenji1_cohen_track "../Data/Cohen_genomic_environments/basenji1_cohen_tracks.yaml"
+      number_of_jobs: 100
+    basenji2:
+      track_dict: *segal_track
+      number_of_jobs: 100
+  cohen_patchmpra:
+    data: &cohen_data "../Data/Cohen_genomic_environments"
+    genome: *hg38
+    result_path: &cohen_result "../Results/Cohen_genomic_environments"
+    enformer:
+      track_dict: *segal_track
+      number_of_jobs: 10
+  cohen_tripseq:
+    data: *cohen_data
+    genome: *hg38
+    result_path: *cohen_result
+    enformer:
+      track_dict: "../Data/Cohen_genomic_environments/cohen_tracks.yaml"
+      number_of_jobs: 2000
+    basenji1:
+      track_dict: *basenji1_cohen_track
+      number_of_jobs: 200
+    basenji2:
+      track_dict: "../Data/Cohen_genomic_environments/cohen_tracks.yaml"
+      number_of_jobs: 200
+  findlay_brca:
+    data: "../Data/Findlay_brca1"
+    genome: *hg19
+    result_path: "../Results/Findlay_brca1"
+    enformer:
+      track_dict: &brca_track "../Data/Findlay_brca1/brca_tracks.yaml"
+      number_of_jobs: 10
+  weiss_constructs:
+    data: &weiss_data "../Data/Weiss_human_specific_variants"
+    genome: *hg38
+    result_path: &weiss_result "../Results/Weiss_human_specific_variants"
+    enformer:
+      track_dict: &weiss_track "../Data/Weiss_human_specific_variants/weiss_tracks.yaml"
+      number_of_jobs: 100
+  weiss_ingenome:
+    data: *weiss_data
+    genome: *hg38
+    result_path: *weiss_result
+    enformer:
+      track_dict: *weiss_track
+      number_of_jobs: 100
+  bergmann_exp:
+    data: &bergmann_data "../Data/Bergman_compatibility_logic"
+    genome: *hg38
+    result_path: &bergmann_result "../Results/Bergman_compatibility_logic"
+    enformer:
+      track_dict: *k562_track
+      number_of_jobs: 6000
+    basenji2:
+      track_dict: *k562_track
+      number_of_jobs: 6000
+  bergmann_promoteronly:
+    data: *bergmann_data
+    genome: *hg38
+    result_path: *bergmann_result
+    enformer:
+      track_dict: *k562_track
+      number_of_jobs: 100
+  bergmann_enhancercentered:
+    data: *bergmann_data
+    genome: *hg38
+    result_path: *bergmann_result
+    enformer:
+      track_dict: *k562_track
+      number_of_jobs: 6000
+  kircher_ingenome:
+    data: "../Data/Kircher_saturation_mutagenesis"
+    genome: *hg38
+    result_path: "../Results/Kircher_saturation_mutagenesis"
+    enformer:
+      track_dict: &kircher_track "../Data/Kircher_saturation_mutagenesis/kircher_tracks.yaml"
+      number_of_jobs: 300
+    basenji1:
+      track_dict: &basenji1_kircher_track "../Data/Kircher_saturation_mutagenesis/basenji1_kircher_tracks.yaml"
+      number_of_jobs: 300
+    basenji2:
+      track_dict: *kircher_track
+      number_of_jobs: 300
+  arensbergen_ingenome:
+    data: "../Data/Arensbergen_sure_mpra/"
+    genome: *hg19
+    result_path: "../Results/Arensbergen_sure_mpra"
+    enformer:
+      track_dict: "../Data/Arensbergen_sure_mpra/arensbergen_tracks.yaml"
+      number_of_jobs: 500
+    basenji1:
+      track_dict: "../Data/Arensbergen_sure_mpra/basenji1_arensbergen_tracks.yaml"
+      number_of_jobs: 500
+    basenji2:
+      track_dict: "../Data/Arensbergen_sure_mpra/arensbergen_tracks.yaml"
+      number_of_jobs: 500
+  arensbergen_plasmid:
+    data: "../Data/Arensbergen_sure_mpra/"
+    genome: *hg19
+    result_path: "../Results/Arensbergen_sure_mpra"
+    enformer:
+      track_dict: "../Data/Arensbergen_sure_mpra/arensbergen_plasmid_tracks.yaml"
+      number_of_jobs: 500
+  tss_sim:
+    data: "../Data/TSS_sim/"
+    genome: *hg38
+    result_path: "../Results/TSS_sim/"
+    enformer:
+      track_dict: *kircher_track
+      number_of_jobs: 500
+    basenji1:
+      track_dict: *basenji1_kircher_track
+      number_of_jobs: 500
+    basenji2:
+      track_dict: *kircher_track
+      number_of_jobs: 500
+  tss_sim_shuffled:
+    data: "../Data/TSS_sim/"
+    genome: *hg38
+    result_path: "../Results/TSS_sim/"
+    enformer:
+      track_dict: *kircher_track
+      number_of_jobs: 1500
+  asb:
+    data: "../Data/Abramov_ASB/"
+    genome: *hg38
+    result_path: "../Results/Abramov_ASB/"
+    enformer:
+      track_dict: "../Data/Abramov_ASB/abramov_tracks.yaml"
+      number_of_jobs: 12000 
+  fulco_crispri:
+    data: "../Data/Fulco_CRISPRi/"
+    genome: *hg38
+    result_path: "../Results/Fulco_CRISPRi/"
+    enformer:
+      track_dict: "../Data/Fulco_CRISPRi/preprocessing_tracks.yaml"
+      number_of_jobs: 1500 
+  avsec_fulltable:
+    data: "../Data/Fulco_CRISPRi/"
+    genome: *hg38
+    result_path: "../Results/Fulco_CRISPRi/"
+    enh_wide_type: "avsec"
+    shuffles: 25
+    enformer:
+      track_dict: "../Data/Fulco_CRISPRi/preprocessing_tracks.yaml"
+      number_of_jobs: 1500 
+  avsec_fulltable_fixed:
+    data: "../Data/Fulco_CRISPRi/"
+    genome: *hg38
+    result_path: "../Results/Fulco_CRISPRi/"
+    enh_wide_type: "fixed"
+    shuffles: 25
+    enformer:
+      track_dict: "../Data/Fulco_CRISPRi/preprocessing_tracks.yaml"
+      number_of_jobs: 1500
+  sahu_enhancercentred:
+    data: "../Data/Sahu_enhancers/"
+    genome: *hg38
+    result_path: "../Results/Sahu_enhancers/"
+    enformer:
+      track_dict: "../Data/Sahu_enhancers/sahu_tracks.yaml"
+      number_of_jobs: 1200
+  avsec_enhancercentered:
+    data: "../Data/Fulco_CRISPRi/"
+    genome: *hg38
+    result_path: "../Results/Fulco_CRISPRi/"
+    enformer:
+      track_dict: "../Data/Tracks/all_tracks_deduped.yaml"
+      number_of_jobs: 300
+    basenji2:
+      track_dict: "../Data/Tracks/all_tracks_deduped.yaml"
+      number_of_jobs: 300
+  segal_ism:
+    data: "../Data/Segal_promoter"
+    genome: *hg38
+    result_path: "../Results/Segal_promoter"
+    enformer:
+      track_dict: *segal_track
+      number_of_jobs: 100
+  gtex_eqtl_at_tss:
+    data: "../Data/gtex_aFC"
+    genome: *hg38
+    result_path: "../Results/gtex_aFC"
+    enformer:
+      track_dict: *kircher_track
+      number_of_jobs: 100
+    basenji2:
+      track_dict: *kircher_track
+      number_of_jobs: 100
+  ful_gas_localeffects:
+    data: "../Data/Fulco_CRISPRi"
+    genome: *hg38
+    result_path: "../Results/Fulco_CRISPRi"
+    enformer:
+      track_dict: "../Data/Tracks/k562_tracks.yaml"
+      number_of_jobs: 300
+  bergmann_in_fulco:
+    data: "../Data/Fulco_CRISPRi"
+    genome: *hg38
+    result_path: "../Results/Fulco_CRISPRi"
+    enformer:
+      track_dict: "../Data/Fulco_CRISPRi/bergmann_in_fulco_tracks.yaml"
+      number_of_jobs: 500
+  fulco_in_fulco:
+    data: "../Data/Fulco_CRISPRi"
+    genome: *hg38
+    result_path: "../Results/Fulco_CRISPRi"
+    enformer:
+      track_dict: "../Data/Fulco_CRISPRi/bergmann_in_fulco_tracks.yaml"
+      number_of_jobs: 500
+  windowed_cre:
+    data: "../Data/TSS_sim"
+    genome: *hg38
+    result_path: "../Results/TSS_sim"
+    shuffles: 3
+    enformer:
+      track_dict: "../Data/TSS_sim/allcage.yaml"
+      number_of_jobs: 2000
