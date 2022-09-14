@@ -51,6 +51,8 @@ To find out the appropriate arguments needed to run this in your specific case, 
 
 After the prediction task has finished, a `<dataset_name>-<model_name>-latest_results.tsv` link will be made in the `Results` folder. This file is then used in the analysis notebook.
 
+If you can't run the pipeline yourself but need the prediction file for a certain target, please contact us.
+
 ## Available Targets
 `Snakefile` currently contains the following targets to generate predictions, each of which corresponds to a different dataset, and if available, a certain model (in case no model is specified, Enformer is used):
 
