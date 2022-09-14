@@ -52,7 +52,7 @@ To find out the appropriate arguments needed to run this in your specific case, 
 After the prediction task has finished, a `<dataset_name>-<model_name>-latest_results.tsv` link will be made in the `Results` folder. This file is then used in the analysis notebook.
 
 ## Available Targets
-`Snakefile` currently contains the following targets to generate predictions, each of which corresponds to a different dataset, and if available, a certain model:
+`Snakefile` currently contains the following targets to generate predictions, each of which corresponds to a different dataset, and if available, a certain model (in case no model is specified, Enformer is used):
 
 - `segal_promoters_<model>` for `<model>`: `enformer`, `basenji1` and `basenji2`
 - `cohen_tripseq_<model>` for `<model>`: `enformer`, `basenji1` and `basenji2`
@@ -74,6 +74,9 @@ After the prediction task has finished, a `<dataset_name>-<model_name>-latest_re
 
 ## Directory tour
 - `Data`: data needed as input for generating our samples etc.
+- `environment.yml`: file to reproduce the pipeline conda environment
+- `Enformer_experiments.ipynb`: notebook containing all analyses
+- `Track_file_prep.ipynb`: notebook used to generate track files
 - `Pipes`: pipeline data
   - `Snakefile`: the file defining all pipeline steps
   - `config`: configuration files, contains only a single YAML file describing paths to genome files, prediction tracks used for a sample generator, and the number of jobs to split a dataset into.
