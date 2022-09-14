@@ -9,9 +9,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.14.0
 #   kernelspec:
-#     display_name: Python [conda env:anaconda-karollus-tfhub]
+#     display_name: Python [conda env:anaconda-sequencemodelbenchmark]
 #     language: python
-#     name: conda-env-anaconda-karollus-tfhub-py
+#     name: conda-env-anaconda-sequencemodelbenchmark-py
 # ---
 
 # %% [markdown]
@@ -881,6 +881,8 @@ segal_df["Oligo_sequence"].str.len().describe()
 
 # %% [markdown]
 # ## Test insertion
+#
+# We try out a particular promoter, to see if Enformer understands what we are trying to do at all
 
 # %%
 aavs1
@@ -903,13 +905,10 @@ def test_segal_insertion(insert, landmark, extra_offset=0, verbose=True):
         print(predictions[minbin-1:maxbin+1,  4828])
         print(predictions[landmarkbin,  4828])
         print(sum(predictions[minbin-1:maxbin+1,  4828]))
-
-insert_min = prom + egfp_seq
-
-landmark_min = len(prom)//2
-
-test_segal_insertion(insert_min, landmark_min, extra_offset = 0)
+    else:
         return (predictions[landmarkbin,  4828], sum(predictions[landmarkbin-1:landmarkbin+2,  4828]))
+
+        
 
 # %%
 idx = 15136#15749
@@ -2295,6 +2294,8 @@ p.save("Graphics/" + "xsup_promoter_ism_nt" + ".svg", width=6.0, height=2.5, dpi
 
 # %% [markdown]
 # # Hong et al. (Cohen lab) TRIP-Seq and Patch-MPRA
+#
+# This section contains our results for the Hong et al experiment(s), who tested some promoters integrated in many backgrounds (TRIP-Seq) and many promoters in a few backgrounds (Patch-MPRA)
 
 # %% [markdown]
 # Positions on the plasmid:
@@ -2865,36 +2866,9 @@ p
 p.save("Graphics/" + "xsup_distal_cohen_patch_stdobs" + ".svg", width=6.4*scale, height=4.8*scale, dpi=300)
 
 # %% [markdown]
-# ### Predicting the region effect
-
-# %%
-region_effects = merged_df_min.query('promoter == "hk1"')[["promoter","LP_interval","Orientation","log2(exp)"]]
-region_effects["Chromosome"] = region_effects["LP_interval"].apply(lambda x: x.split(":")[0])
-region_effects["Start"] = region_effects["LP_interval"].apply(lambda x: x.split(":").split(".")[1]).astype('int')
-region_effects["Chromosome"] = region_effects["LP_interval"].apply(lambda x: x.split(":").split(".")[2]).astype('int')
-
-# %%
-canonical_tss = pd.read_csv(base_path_data_tss_sim + 'only_protein_coding_ensembl_canonical_tss.tsv',sep="\t").rename(columns={"ts_id":"transcript_id"})
-canonical_tss['tss'] = canonical_tss['tss'] - 1
-gene_chr = gtf_df.df[["Chromosome","gene_id"]].drop_duplicates()
-gene_chr["gene_id"] = gene_chr["gene_id"].apply(lambda x: x.split('.')[0])
-canonical_tss = canonical_tss.merge(gene_chr, on="gene_id")
-canonical_tss = canonical_tss.query('Chromosome != "chrY" and Chromosome != "chrMT"')
-
-canonical_tss["Start"] = canonical_tss["tss"] - (SEEN_SEQUENCE_LENGTH)/2
-canonical_tss["End"] = canonical_tss["tss"] + (SEEN_SEQUENCE_LENGTH)/2
-canonical_tss_pr = pr.PyRanges(canonical_tss)
-
-# %%
-
-# %%
-canonical_tss_pr
-
-# %%
-cre_joined = canonical_tss_pr.join(cre_pr,strandedness=False,suffix="_cre",report_overlap=True).df
-
-# %% [markdown]
 # # Bergman et al. Enhancer-Promoter Compatibility MPRA
+#
+# The experiment by Bergman et al. tested many combinations of promoter and enhancer in a plasmid background
 #
 # Uses hSTARR-seq_SCP1_vector_ 6243
 #
@@ -4138,6 +4112,8 @@ p.save("Graphics/" + "enhancer_std" + ".svg", width=2.5, height=2.6, dpi=300)
 
 # %% [markdown]
 # # Enhancer Knockdown (Fulco et al. & Gasperini et al.)
+#
+# In these CRISPRi studies, enhancers were knocked down using CRISPR interference, to measure the impact on expression of target genes. We replicate this by shuffling enhancer sequences.
 
 # %%
 base_path_data = "Data/Fulco_CRISPRi/"
@@ -5694,6 +5670,8 @@ candidate_locs.to_csv(base_path_data + "in_silico_candidate_locs.tsv",sep="\t", 
 
 # %% [markdown]
 # # Is Enformer multiplicative?
+#
+# In this in-silico experiment, we analyze whether Enformer follows a multiplicative logic to determine expression (background and enhancer scale an innate promoter strength). For this purpose, we identify promoter, enhancer and backgrounds which are such that enformer links the enhancer with the promoter. We then test every combination of promoter and enhancer (in 32 backgrounds) and assess how well a multiplicative model explains the results
 
 # %%
 base_path_data = "Data/Fulco_CRISPRi/"
@@ -6340,7 +6318,13 @@ prom_pivot.columns = prom_pivot.columns.get_level_values(1)
 sns_plot = sns.clustermap(prom_pivot.corr())
 
 # %% [markdown] tags=[]
-# # What fraction of the sequence influences predictions? (Simulation + GTEx + Cardoso-Moreira et al. (Kaessmann lab))
+# # What fraction of the sequence influences predictions? (GTEx + (eQTL) + Cardoso-Moreira et al. (Kaessmann lab))
+#
+# Here we:
+#
+# - Analyze the performance of Xpresso, Basenji2 and Enformer on the GTEx data
+# - Analyze to what extent proximal and distal sequence contribute
+# - Test Enformer on GTEx eQTL
 
 # %%
 base_path_data = "Data/GTEX/"
@@ -8997,6 +8981,8 @@ p.save("Graphics/" + "classimba_distbn" + ".svg", width=2.9, height=3.0, dpi=300
 
 # %% [markdown]
 # # Kircher Saturation Mutagenesis
+#
+# We apply a number of models to the Kircher saturation mutagenesis data, which tested many variants in different loci (mostly promoters) using a reporter plasmid.
 #
 # Some things are notable here:
 #
