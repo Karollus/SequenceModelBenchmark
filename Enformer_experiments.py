@@ -2355,7 +2355,7 @@ trip['LP_interval'] = trip['LP_interval'].astype('str')
 pred_col = 'CAGE:chronic myelogenous leukemia cell line:K562 ENCODE, biol__landmark_sum'
 
 # %%
-results = pd.read_csv(base_path_results + "cohen_tripseq-latest_results.tsv",sep="\t")
+results = pd.read_csv(base_path_results + "cohen_tripseq-enformer-latest_results.tsv",sep="\t")
 # average over different offsets
 results = (results.groupby(["promoter","LP_interval", "insert_type", "window_size"])[[x for x in results.keys() if "CAGE" in x]].mean().reset_index())
 merged_df = results.merge(trip, on=["promoter","LP_interval"])
@@ -2688,7 +2688,7 @@ pred_col_patchmpra = 'CAGE:chronic myelogenous leukemia cell line:K562  ENCODE, 
 obs_patchmpra = pd.read_csv(base_path_data + "patchMPRA_expression.tsv", sep="\t").rename(columns={'LP':'LP_name'})
 
 # %%
-results_patchmpra = pd.read_csv(base_path_results + "cohen_patchmpra-latest_results.tsv",sep="\t")
+results_patchmpra = pd.read_csv(base_path_results + "cohen_patchmpra-enformer-latest_results.tsv",sep="\t")
 # average over different offsets
 results_patchmpra = (results_patchmpra.groupby(["oligo_id","LP_name"])[[x for x in results_patchmpra.keys() if "CAGE" in x]].mean().reset_index())
 
@@ -3075,7 +3075,12 @@ test_bergmann_insertion(plasmid_min, landmark_min, extra_offset=-64)
 # ## Analysis
 
 # %%
-results = pd.read_csv(base_path_results + "bergmann_exp_cage_dnase_only_latest.tsv",sep="\t")
+with open(base_path_results  + "bergmann_exp-enformer-latest_results.tsv", 'r') as tsv:
+    header = tsv.readline().strip()
+    cols = header.split("\t")
+cols = [k for k in cols if "CAGE" in k or "DNASE" in k and k.endswith("landmark_sum")]
+
+results = pd.read_csv(base_path_results + "bergmann_exp-enformer-latest_results.tsv",sep="\t", usecols=["promoter","enhancer","insert_type"]+cols)
 results = (results.groupby(["promoter","enhancer","insert_type"])[[x for x in results.keys() if "CAGE" in x or "DNASE" in x]].mean().reset_index())
 
 # %%
@@ -3083,17 +3088,6 @@ merged_df_all = (results.merge(exp_df, on=["promoter","enhancer"]))
 promoter_class = pd.read_csv(os.path.join(base_path_data,"promoter_classes.txt"),sep="\t")[["fragment","promoter_exp_class","randomBG"]].rename(columns={"fragment":"promoter", "randomBG":"randomBG_promoter"})
 enhancer_class = pd.read_csv(os.path.join(base_path_data,"enhancer_classes.txt"),sep="\t")[["fragment","enhancer_exp_class","randomBG"]].rename(columns={"fragment":"enhancer", "randomBG":"randomBG_enhancer"})
 merged_df_all = merged_df_all.merge(promoter_class,on="promoter").merge(enhancer_class,on="enhancer")
-
-# %%
-prom_only = pd.read_csv(base_path_results + "bergmann_promoteronly-latest_results.tsv", sep="\t")
-prom_only = (prom_only.groupby(["fragment","insert_type"])[[x for x in prom_only.keys() if ("CAGE" in x or "DNASE" in x or "CHIP" in x)]].mean().reset_index())
-
-# %%
-enhancer_centred = pd.read_csv(base_path_results + "bergmann_enhancercentered_cage_dnase_only_latest.tsv",sep="\t")
-enhancer_centred = (enhancer_centred.groupby(["promoter","enhancer","insert_type"])[[x for x in enhancer_centred.keys() if "CAGE" in x or "DNASE" in x]].mean().reset_index())
-enhancer_centred = (enhancer_centred.merge(exp_df, on=["promoter","enhancer"]))
-
-enhancer_centred_min = enhancer_centred.query('insert_type == "min_plasmid"')
 
 # %% [markdown]
 # ### Subset df
@@ -3119,11 +3113,6 @@ merged_df_min["log_DNA_input"] = np.log2(merged_df_min["DNA_input"] + 1)
 merged_df_min["log_RNA_sum"] = np.log2(merged_df_min["RNA_sum"] + 1)
 merged_df_min[log_pred_col] = np.log2(merged_df_min[pred_col] + 1)
 merged_df_min[log_pred_col_dnase] = np.log2(merged_df_min[pred_col_dnase] + 1)
-
-# %%
-prom_only_min = prom_only.query('insert_type == "min_plasmid"')
-prom_only_full = prom_only.query('insert_type == "full_plasmid"')
-prom_only_ingenome = prom_only.query('insert_type == "aavs1"')
 
 # %%
 merged_df_ingenome[log_pred_col] = np.log2(merged_df_ingenome[pred_col] + 1)
@@ -3155,7 +3144,7 @@ print(scipy.stats.pearsonr(np.log2(merged_df_min['DNASE:K562_4_landmark_sum']+1)
 # %%
 scale = 1.3
 p9.options.figure_size = (6.4*scale, 4.8*scale)
-(p9.ggplot(data=merged_df,mapping=p9.aes(x=pred_col,y='log(RNA/DNA)'))
+(p9.ggplot(data=merged_df_min,mapping=p9.aes(x=pred_col,y='log(RNA/DNA)'))
  #+ p9.geom_point(alpha=0.1)
  + p9.geom_bin2d(binwidth = (0.025, 0.1))
  + p9.scale_x_log10()
@@ -4213,7 +4202,7 @@ missing_genes = {"ADSS2":'ADSS',
                  "POLR1H":'ZNRD1'}
 
 # %%
-results = pd.read_csv(base_path_results + "avsec_fulltable_fixed-latest_results.tsv",sep="\t")
+results = pd.read_csv(base_path_results + "avsec_fulltable_fixed-enformer-latest_results.tsv",sep="\t")
 
 # %%
 set(results["enhancer_wide_type"])
@@ -6777,12 +6766,12 @@ cre_joined.rename(columns={"Strand":"cre_type"}).to_csv(base_path_data_tss_sim +
 # ## Analysis - GTEx
 
 # %%
-with open(base_path_results  + "tss_sim-latest_results.tsv", 'r') as tsv:
+with open(base_path_results  + "tss_sim-enformer-latest_results.tsv", 'r') as tsv:
     header = tsv.readline()
     cols = header.split("\t")
 cols = [k for k in cols if "CAGE" in k and k.endswith("landmark_sum")]
 
-results = pd.read_csv(base_path_results + "tss_sim-latest_results.tsv",sep="\t",
+results = pd.read_csv(base_path_results + "tss_sim-enformer-latest_results.tsv",sep="\t",
                      usecols = ['gene_id', 'gene_name', "transcript_id","window_type","window_size"] + cols)
 
 # %%
@@ -6935,12 +6924,12 @@ gene_corrs.groupby('window_size').median()
 #results = pd.read_csv(base_path_results + "tss_sim_groupby_20_05_2022.tsv",sep="\t",
 #                     usecols = ['gene_id', 'gene_name', "transcript_id","window_type","window_size"] + cols)
 
-with open(base_path_results  + "tss_sim-latest_results.tsv", 'r') as tsv:
+with open(base_path_results  + "tss_sim-enformer-latest_results.tsv", 'r') as tsv:
     header = tsv.readline()
     cols = header.split("\t")
 cols = [k for k in cols if "CAGE" in k and k.endswith("landmark_sum")]
 
-results = pd.read_csv(base_path_results + "tss_sim-latest_results.tsv",sep="\t",
+results = pd.read_csv(base_path_results + "tss_sim-enformer-latest_results.tsv",sep="\t",
                      usecols = ['gene_id', 'gene_name', "transcript_id","window_type","window_size"] + cols)
 
 results = (results.groupby(["gene_id","gene_name"])[[x for x in results.keys() if "CAGE" in x]].mean().reset_index())
@@ -9227,7 +9216,7 @@ modified_sequence_ref[393216//2 + 1:] == modified_sequence_alt[393216//2 + 1:]
 
 # %%
 enformer_cols = list(set(itertools.chain.from_iterable(cell_type_dict.values()))) + list(set(itertools.chain.from_iterable(cell_type_dict_dnase.values())))
-result_df = pd.read_csv(base_path_results + "kircher_ingenome-latest_results.tsv",sep="\t", usecols=["chromosome","locus","variant_pos","variant_type", "nucleotide", "offset", "orient"]+enformer_cols)
+result_df = pd.read_csv(base_path_results + "kircher_ingenome-enformer-latest_results.tsv",sep="\t", usecols=["chromosome","locus","variant_pos","variant_type", "nucleotide", "offset", "orient"]+enformer_cols)
 
 # %%
 result_df = result_df.query('offset in [-43, 0, 43]').groupby(["chromosome","locus","variant_pos","variant_type", "nucleotide"])[enformer_cols].mean().reset_index()
