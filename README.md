@@ -77,7 +77,9 @@ If you can't run the pipeline yourself but need the prediction file for a certai
 ## Directory tour
 - `Data`: data needed as input for generating our samples etc.
 - `environment.yml`: file to reproduce the pipeline conda environment
-- `Enformer_experiments.ipynb`: notebook containing all analyses
+- `Enformer_experiments.ipynb`: notebook containing all analyses from the main text
+- `Enhancer_shift.ipynb`: notebook containing all analyses pertaining to the in-silico enhancer shift
+- `GTEX_manual_match.ipynb`: notebook containing the analyses for Additional File 2.
 - `Track_file_prep.ipynb`: notebook used to generate track files
 - `Pipes`: pipeline data
   - `Snakefile`: the file defining all pipeline steps
